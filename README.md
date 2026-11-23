@@ -10,10 +10,21 @@ Il s'installe comme une appli et fonctionne ensuite sans internet.
    **Android (Chrome)** : menu ⋮ → « Installer l'application » ou « Ajouter à l'écran d'accueil ».
 3. Lancer le jeu depuis l'icône : il marche ensuite hors connexion.
 
+## Mode Dictée
+
+Les mots du mode Dictée sont dans `dictee.json` :
+
+```json
+{ "titre": "Semaine du 23 novembre", "mots": ["maison", "école", "cartable"] }
+```
+
+Le mot est lu à voix haute (bouton 🔊). La tablette récupère la nouvelle liste dès qu'elle est connectée, puis la garde pour jouer hors-ligne.
+
 ## Fichiers
 
 - `index.html` : le jeu (mots, règles, graphismes, sons)
 - `manifest.webmanifest` : nom, icône, plein écran
+- `dictee.json` : mots de la semaine pour le mode Dictée
 - `sw.js` : mise en cache pour le mode hors-ligne
 - `icon-*.png` : icônes
 

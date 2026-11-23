@@ -40,9 +40,9 @@
         color:#fff; text-shadow:0 4px 0 #4d8dff, 0 8px 18px rgba(43,58,85,.25); letter-spacing:1px;}
   .logo span{display:inline-block; animation:bob 2.4s ease-in-out infinite;}
   .subtitle{font-size:clamp(18px,2.6vw,26px); color:var(--soft); margin:0;}
-  .modes{display:flex; gap:clamp(12px,2.5vw,28px); flex-wrap:wrap; justify-content:center; margin-top:2vh;}
+  .modes{position:relative; z-index:1; display:flex; gap:clamp(12px,2.5vw,28px); flex-wrap:wrap; justify-content:center; margin-top:2vh;}
   .mode-btn{
-    width:clamp(200px,26vw,270px); padding:22px 18px 18px; border-radius:28px; background:var(--card);
+    width:clamp(190px,22vw,250px); padding:22px 18px 18px; border-radius:28px; background:var(--card);
     box-shadow:0 8px 0 var(--c), 0 14px 28px rgba(43,58,85,.15);
     display:flex; flex-direction:column; align-items:center; gap:6px; transition:transform .12s;
   }
@@ -159,6 +159,11 @@
       <div class="desc">Grands mots · 6 ballons<br>Un seul indice</div>
       <div class="stars" id="stars-difficile">⭐ 0</div>
     </button>
+    <button class="mode-btn" style="--c:var(--orange)" data-mode="dictee" id="btn-dictee">
+      <div class="big">📝</div><div class="name">Dictée</div>
+      <div class="desc" id="dictee-desc">Les mots de l'école<br>On écoute le mot 🔊</div>
+      <div class="stars" id="stars-dictee">⭐ 0</div>
+    </button>
   </div>
 </section>
 
@@ -245,14 +250,15 @@ const WORDS = {
 const MODES = {
   facile:   {label:"Facile",    lives:10, color:"var(--green)",  showEmoji:true,  showCat:true,  first:true},
   moyen:    {label:"Moyen",     lives:8,  color:"var(--blue)",   showEmoji:false, showCat:true,  first:false},
-  difficile:{label:"Difficile", lives:6,  color:"var(--purple)", showEmoji:false, showCat:false, first:false}
+  difficile:{label:"Difficile", lives:6,  color:"var(--purple)", showEmoji:false, showCat:false, first:false},
+  dictee:   {label:"Dictée",    lives:8,  color:"var(--orange)", showEmoji:false, showCat:false, first:false, speak:true}
 };
 const BALLOON_COLORS = ["#ff6b6b","#ffd23f","#4d8dff","#3cc47c","#ff9f43","#9b6bff","#ff7ac6","#2ec4d6","#ff6b6b","#ffd23f"];
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 /* ================== ÉTAT ================== */
 const S = { mode:"facile", word:null, guessed:new Set(), lives:0, max:0, over:false, hintLevel:0, sound:true, bags:{} };
-let stars = {facile:0, moyen:0, difficile:0};
+let stars = {facile:0, moyen:0, difficile:0, dictee:0};
 try{ const s = JSON.parse(localStorage.getItem("pendu-stars")); if(s) stars = Object.assign(stars, s); }catch(e){}
 function saveStars(){ try{ localStorage.setItem("pendu-stars", JSON.stringify(stars)); }catch(e){} }
 
@@ -400,8 +406,11 @@ function render(){
   let h = "";
   if(showEmoji) h += `<span class="hint-emoji">${S.word[1]}</span>`;
   if(showCat) h += `<span class="hint-cat">${S.word[2]}</span>`;
-  if(!S.over && S.hintLevel===0 && !M.showEmoji) h += `<button class="hint-btn" id="btn-hint">💡 Indice</button>`;
+  if(M.speak){
+    h = `<button class="hint-btn" id="btn-say">🔊 Écouter le mot</button><span class="hint-cat">${S.word[2]}</span>`;
+  } else if(!S.over && S.hintLevel===0 && !M.showEmoji) h += `<button class="hint-btn" id="btn-hint">💡 Indice</button>`;
   $("hint").innerHTML = h;
+  const sb = $("btn-say"); if(sb) sb.onclick = ()=> say(S.word[0]);
   const hb = $("btn-hint"); if(hb) hb.onclick = ()=>{ S.hintLevel = 1; tone(990,.15,"triangle"); render(); };
   // vies + humeur
   $("lives").textContent = "🎈 " + S.lives;
@@ -444,9 +453,13 @@ function confetti(){
 /* ================== NAVIGATION ================== */
 function showScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active", s.id===id));
-  if(id==="home") ["facile","moyen","difficile"].forEach(m => $("stars-"+m).textContent = "⭐ " + stars[m]);
+  if(id==="home") ["facile","moyen","difficile","dictee"].forEach(m => $("stars-"+m).textContent = "⭐ " + stars[m]);
 }
-document.querySelectorAll(".mode-btn").forEach(b => b.addEventListener("click", ()=>{ ac(); startGame(b.dataset.mode); }));
+document.querySelectorAll(".mode-btn").forEach(b => b.addEventListener("click", ()=>{
+  ac();
+  if(b.dataset.mode==="dictee" && !(WORDS.dictee && WORDS.dictee.length)) return;
+  startGame(b.dataset.mode);
+}));
 $("btn-menu").onclick = ()=>{ $("overlay").classList.remove("show"); showScreen("home"); };
 $("btn-home").onclick = ()=>{ $("overlay").classList.remove("show"); showScreen("home"); };
 $("btn-again").onclick = ()=> startGame(S.mode);
@@ -459,6 +472,41 @@ document.addEventListener("keydown", e=>{
 });
 window.addEventListener("resize", ()=>{ if(S.word && $("game").classList.contains("active")) render(); });
 showScreen("home");
+
+/* ================== DICTÉE ================== */
+// Les mots de la semaine sont dans dictee.json (mis à jour sur GitHub), avec une copie locale pour le hors-ligne.
+function say(text){
+  try{
+    if(!S.sound || !window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.toLowerCase());
+    u.lang = "fr-FR"; u.rate = .8;
+    const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("fr"));
+    if(v) u.voice = v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function applyDictee(data){
+  if(!data || !Array.isArray(data.mots) || !data.mots.length) return false;
+  const titre = data.titre || "Mots de la semaine";
+  WORDS.dictee = data.mots.map(m => [String(m).trim().toUpperCase(), "📝", titre]).filter(w => w[0]);
+  S.bags.dictee = [];
+  $("dictee-desc").innerHTML = `${titre}<br>${WORDS.dictee.length} mots · on écoute 🔊`;
+  $("btn-dictee").style.opacity = 1;
+  return true;
+}
+(function loadDictee(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem("pendu-dictee")); }catch(e){}
+  if(!applyDictee(saved)){ $("dictee-desc").innerHTML = "Pas encore de mots<br>(connecte-toi une fois)"; $("btn-dictee").style.opacity = .5; }
+  fetch("dictee.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).then(d => {
+    if(applyDictee(d)){ try{ localStorage.setItem("pendu-dictee", JSON.stringify(d)); }catch(e){} }
+  }).catch(()=>{});
+})();
+// startGame lit le mot à voix haute en mode dictée
+const _startGame = startGame;
+startGame = function(mode){ _startGame(mode); if(MODES[mode].speak) setTimeout(()=>say(S.word[0]), 300); };
+
 if("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
   window.addEventListener("load", ()=> navigator.serviceWorker.register("sw.js").catch(()=>{}));
 }
