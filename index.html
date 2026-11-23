@@ -67,7 +67,7 @@
   .scene-wrap{flex:1 1 auto; min-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;}
   #scene{height:100%; max-height:46vh; width:auto; max-width:100%; overflow:visible;}
   .lives{font-size:22px; font-weight:600; background:rgba(255,255,255,.8); padding:6px 16px; border-radius:99px; margin-top:4px;}
-  .panel{display:flex; flex-direction:column; align-items:center; gap:1.6vh; flex:0 0 auto;}
+  .panel{min-width:0; display:flex; flex-direction:column; align-items:center; gap:1.6vh; flex:0 0 auto;}
 
   .hint{display:flex; align-items:center; gap:12px; min-height:64px; flex-wrap:wrap; justify-content:center;}
   .hint-emoji{font-size:58px; line-height:1; animation:pop-in .4s ease;}
@@ -75,7 +75,7 @@
   .hint-btn{font-size:22px; font-weight:600; background:var(--yellow); padding:10px 20px; border-radius:99px; box-shadow:0 5px 0 #e0b100;}
   .hint-btn:active{transform:translateY(4px); box-shadow:0 1px 0 #e0b100;}
 
-  .word{display:flex; gap:var(--gap,8px); justify-content:center; flex-wrap:nowrap; padding:4px 0;}
+  .word{max-width:100%; display:flex; gap:var(--gap,8px); justify-content:center; flex-wrap:nowrap; padding:4px 0;}
   .slot{width:var(--s,56px); height:calc(var(--s,56px) * 1.2); border-radius:12px; background:#fff;
         border-bottom:5px solid #9fb3d1; display:flex; align-items:center; justify-content:center;
         font-size:calc(var(--s,56px) * .68); font-weight:700;}
@@ -99,6 +99,29 @@
     .scene-wrap{flex:0 0 40%;}
     #scene{max-height:72vh;}
     .panel{flex:1; justify-content:center; gap:3vh;}
+  }
+
+  /* Téléphone */
+  #home{overflow-y:auto; justify-content:safe center;}
+  .wins{white-space:nowrap;}
+  .keyboard{grid-template-columns:repeat(9, minmax(0,1fr));}
+  .key{min-width:0;}
+  @media (max-width:600px){
+    #home{gap:2vh; padding:20px 14px;}
+    .modes{display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%;}
+    .mode-btn{width:auto; padding:14px 8px 12px; border-radius:22px;}
+    .mode-btn .big{font-size:40px;}
+    .mode-btn .name{font-size:24px;}
+    .mode-btn .desc{font-size:13px;}
+    .mode-btn .stars{font-size:15px;}
+    #game{padding-left:8px; padding-right:8px;}
+    .icon-btn{height:46px; min-width:46px; padding:0 10px; font-size:20px;}
+    .badge, .wins{font-size:18px; padding:8px 12px;}
+    .keyboard{gap:4px;}
+    .key{aspect-ratio:auto; min-height:0; height:48px; border-radius:10px; font-size:22px; box-shadow:0 3px 0 #b9c9e3;}
+    .key.good{box-shadow:0 3px 0 #23935a;} .key.bad{box-shadow:0 3px 0 #d2d9e5;}
+    .hint{min-height:48px;} .hint-emoji{font-size:44px;} .hint-cat, .hint-btn{font-size:18px;}
+    #scene{max-height:34vh;}
   }
 
   /* ---------- Fin de partie ---------- */
@@ -388,9 +411,9 @@ function render(){
   const w = S.word[0], M = MODES[S.mode];
   // mot
   const box = $("word"); box.innerHTML = "";
-  const panelW = Math.min(box.parentElement.clientWidth || window.innerWidth, 760);
+  const panelW = Math.min(box.parentElement.clientWidth || window.innerWidth, window.innerWidth - 16, 760);
   const gap = w.length > 9 ? 5 : 8;
-  const size = Math.max(26, Math.min(64, Math.floor((panelW - gap*(w.length-1) - 8) / w.length)));
+  const size = Math.max(20, Math.min(64, Math.floor((panelW - gap*(w.length-1) - 8) / w.length)));
   box.style.setProperty("--s", size + "px"); box.style.setProperty("--gap", gap + "px");
   [...w].forEach(c=>{
     const d = document.createElement("div");

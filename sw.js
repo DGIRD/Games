@@ -1,5 +1,5 @@
 // Cache hors-ligne du Pendu des Ballons
-const CACHE = "pendu-v2";
+const CACHE = "pendu-v3";
 const FILES = ["./", "./index.html", "./dictee.json", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
