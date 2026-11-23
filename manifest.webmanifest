@@ -1,7 +1,7 @@
 {
-  "name": "Le Pendu des Ballons",
-  "short_name": "Pendu",
-  "description": "Jeu du pendu pour enfants, 3 niveaux, fonctionne sans internet.",
+  "name": "Mes Jeux",
+  "short_name": "Mes Jeux",
+  "description": "Portail de jeux pour enfants : Le Pendu des Ballons et La Course du Calcul. Fonctionne sans internet.",
   "lang": "fr",
   "start_url": "./index.html",
   "scope": "./",
@@ -10,7 +10,17 @@
   "background_color": "#bfe6ff",
   "theme_color": "#bfe6ff",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }

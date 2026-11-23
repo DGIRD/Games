@@ -1,6 +1,10 @@
-// Cache hors-ligne du Pendu des Ballons
-const CACHE = "pendu-v3";
-const FILES = ["./", "./index.html", "./dictee.json", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
+// Cache hors-ligne du portail Mes Jeux (Pendu des Ballons + Course du Calcul)
+const CACHE = "jeux-v1";
+const FILES = [
+  "./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",
+  "./pendu/", "./pendu/index.html", "./pendu/dictee.json",
+  "./course-du-calcul/", "./course-du-calcul/index.html", "./course-du-calcul/icone.png"
+];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -25,7 +29,7 @@ self.addEventListener("fetch", e => {
   const sameOrigin = url.origin === self.location.origin;
   const fresh = sameOrigin && (e.request.mode === "navigate" || url.pathname.endsWith(".html") || url.pathname.endsWith(".json") || url.pathname.endsWith("/"));
 
-  // Page et liste de dictée : réseau d'abord (pour recevoir les nouveaux mots), cache si hors-ligne.
+  // Pages et liste de dictée : réseau d'abord (pour recevoir les nouveaux mots), cache si hors-ligne.
   if (fresh) {
     e.respondWith(
       fetch(e.request).then(res => res.ok ? saveCopy(e.request, res) : res)

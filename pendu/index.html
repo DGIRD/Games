@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Le Pendu des Ballons</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<meta name="theme-color" content="#bfe6ff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pendu">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky1:#bfe6ff; --sky2:#fff4d6;
+    --ink:#2b3a55; --soft:#5b6b88;
+    --green:#3cc47c; --red:#ff6b6b; --orange:#ff9f43; --blue:#4d8dff; --purple:#9b6bff; --yellow:#ffd23f;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    font-family:'Fredoka', 'Comic Sans MS', system-ui, sans-serif;
+    color:var(--ink);
+    background:linear-gradient(180deg,var(--sky1) 0%, #e3f4ff 55%, var(--sky2) 100%);
+    min-height:100dvh; overflow:hidden;
+    user-select:none; -webkit-user-select:none; touch-action:manipulation;
+  }
+  button{font-family:inherit; color:inherit; border:none; cursor:pointer; touch-action:manipulation;}
+  .screen{position:absolute; inset:0; display:none; flex-direction:column;}
+  .screen.active{display:flex;}
+
+  /* ---------- Accueil ---------- */
+  #home{align-items:center; justify-content:center; gap:3vh; padding:24px; text-align:center;}
+  .logo{font-size:clamp(40px,7vw,76px); font-weight:700; line-height:1; margin:0;
+        color:#fff; text-shadow:0 4px 0 #4d8dff, 0 8px 18px rgba(43,58,85,.25); letter-spacing:1px;}
+  .logo span{display:inline-block; animation:bob 2.4s ease-in-out infinite;}
+  .subtitle{font-size:clamp(18px,2.6vw,26px); color:var(--soft); margin:0;}
+  .modes{position:relative; z-index:1; display:flex; gap:clamp(12px,2.5vw,28px); flex-wrap:wrap; justify-content:center; margin-top:2vh;}
+  .mode-btn{
+    width:clamp(190px,22vw,250px); padding:22px 18px 18px; border-radius:28px; background:var(--card);
+    box-shadow:0 8px 0 var(--c), 0 14px 28px rgba(43,58,85,.15);
+    display:flex; flex-direction:column; align-items:center; gap:6px; transition:transform .12s;
+  }
+  .mode-btn:active{transform:translateY(6px); box-shadow:0 2px 0 var(--c), 0 6px 14px rgba(43,58,85,.15);}
+  .mode-btn .big{font-size:56px; line-height:1.1;}
+  .mode-btn .name{font-size:32px; font-weight:700; color:var(--c);}
+  .mode-btn .desc{font-size:17px; color:var(--soft); line-height:1.3;}
+  .mode-btn .stars{margin-top:6px; font-size:18px; font-weight:600; background:#fff7d6; padding:4px 12px; border-radius:99px;}
+  .home-cloud{position:absolute; font-size:80px; opacity:.85; pointer-events:none; animation:drift 30s linear infinite;}
+
+  /* ---------- Jeu ---------- */
+  #game{padding:max(12px, env(safe-area-inset-top)) 16px 16px;}
+  .topbar{display:flex; align-items:center; gap:10px; flex:0 0 auto;}
+  .icon-btn{height:56px; min-width:56px; padding:0 16px; border-radius:18px; background:#fff; font-size:24px; font-weight:600;
+            box-shadow:0 5px 0 #c9d6ea; display:flex; align-items:center; gap:8px;}
+  .icon-btn:active{transform:translateY(4px); box-shadow:0 1px 0 #c9d6ea;}
+  .badge{padding:10px 18px; border-radius:99px; color:#fff; font-weight:700; font-size:22px; background:var(--c);}
+  .spacer{flex:1;}
+  .wins{font-size:22px; font-weight:600; background:#fff; padding:10px 16px; border-radius:99px;}
+
+  .board{flex:1; display:flex; flex-direction:column; min-height:0; gap:1.5vh; padding-top:1vh;}
+  .scene-wrap{flex:1 1 auto; min-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;}
+  #scene{height:100%; max-height:46vh; width:auto; max-width:100%; overflow:visible;}
+  .lives{font-size:22px; font-weight:600; background:rgba(255,255,255,.8); padding:6px 16px; border-radius:99px; margin-top:4px;}
+  .panel{min-width:0; display:flex; flex-direction:column; align-items:center; gap:1.6vh; flex:0 0 auto;}
+
+  .hint{display:flex; align-items:center; gap:12px; min-height:64px; flex-wrap:wrap; justify-content:center;}
+  .hint-emoji{font-size:58px; line-height:1; animation:pop-in .4s ease;}
+  .hint-cat{font-size:24px; font-weight:600; background:#fff; padding:8px 18px; border-radius:99px; box-shadow:0 3px 0 #dde6f3;}
+  .hint-btn{font-size:22px; font-weight:600; background:var(--yellow); padding:10px 20px; border-radius:99px; box-shadow:0 5px 0 #e0b100;}
+  .hint-btn:active{transform:translateY(4px); box-shadow:0 1px 0 #e0b100;}
+
+  .word{max-width:100%; display:flex; gap:var(--gap,8px); justify-content:center; flex-wrap:nowrap; padding:4px 0;}
+  .slot{width:var(--s,56px); height:calc(var(--s,56px) * 1.2); border-radius:12px; background:#fff;
+        border-bottom:5px solid #9fb3d1; display:flex; align-items:center; justify-content:center;
+        font-size:calc(var(--s,56px) * .68); font-weight:700;}
+  .slot.sep{background:transparent; border-bottom-color:transparent;}
+  .slot.shown{animation:flip .35s ease; color:var(--ink); border-bottom-color:var(--green);}
+  .slot.missed{color:var(--orange); border-bottom-color:var(--orange); animation:flip .35s ease;}
+
+  .keyboard{display:grid; grid-template-columns:repeat(9, 1fr); gap:clamp(6px,1vw,10px); width:min(100%, 760px);}
+  .key{aspect-ratio:1/1; min-height:52px; max-height:78px; border-radius:16px; background:#fff;
+       font-size:clamp(24px,3.4vw,36px); font-weight:700; box-shadow:0 5px 0 #b9c9e3;
+       transition:transform .08s, background .2s; display:flex; align-items:center; justify-content:center;}
+  .key:active:not(:disabled){transform:translateY(4px); box-shadow:0 1px 0 #b9c9e3;}
+  .key.good{background:var(--green); color:#fff; box-shadow:0 5px 0 #23935a;}
+  .key.bad{background:#e7ebf2; color:#aab4c5; box-shadow:0 5px 0 #d2d9e5; animation:shake .35s;}
+  .key:disabled{cursor:default;}
+  .keyboard .key:nth-child(19){grid-column-start:1;}
+
+  /* Paysage (tablette à l'horizontale) */
+  @media (orientation:landscape) and (min-width:760px){
+    .board{flex-direction:row; align-items:stretch; gap:2vw;}
+    .scene-wrap{flex:0 0 40%;}
+    #scene{max-height:72vh;}
+    .panel{flex:1; justify-content:center; gap:3vh;}
+  }
+
+  /* Téléphone */
+  #home{overflow-y:auto; justify-content:safe center;}
+  .wins{white-space:nowrap;}
+  .keyboard{grid-template-columns:repeat(9, minmax(0,1fr));}
+  .key{min-width:0;}
+  @media (max-width:600px){
+    #home{gap:2vh; padding:20px 14px;}
+    .modes{display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%;}
+    .mode-btn{width:auto; padding:14px 8px 12px; border-radius:22px;}
+    .mode-btn .big{font-size:40px;}
+    .mode-btn .name{font-size:24px;}
+    .mode-btn .desc{font-size:13px;}
+    .mode-btn .stars{font-size:15px;}
+    #game{padding-left:8px; padding-right:8px;}
+    .icon-btn{height:46px; min-width:46px; padding:0 10px; font-size:20px;}
+    .badge, .wins{font-size:18px; padding:8px 12px;}
+    .keyboard{gap:4px;}
+    .key{aspect-ratio:auto; min-height:0; height:48px; border-radius:10px; font-size:22px; box-shadow:0 3px 0 #b9c9e3;}
+    .key.good{box-shadow:0 3px 0 #23935a;} .key.bad{box-shadow:0 3px 0 #d2d9e5;}
+    .hint{min-height:48px;} .hint-emoji{font-size:44px;} .hint-cat, .hint-btn{font-size:18px;}
+    #scene{max-height:34vh;}
+  }
+
+  /* ---------- Fin de partie ---------- */
+  .overlay{position:absolute; inset:0; background:rgba(43,58,85,.45); display:none; align-items:center; justify-content:center; z-index:20; padding:20px;}
+  .overlay.show{display:flex;}
+  .modal{background:#fff; border-radius:32px; padding:28px 32px 26px; text-align:center; width:min(92vw,480px);
+         box-shadow:0 20px 50px rgba(0,0,0,.25); animation:pop-in .35s ease;}
+  .modal .face{font-size:84px; line-height:1;}
+  .modal h2{font-size:40px; margin:8px 0 4px;}
+  .modal p{font-size:22px; color:var(--soft); margin:6px 0;}
+  .modal .answer{font-size:34px; font-weight:700; letter-spacing:3px; color:var(--blue); margin:8px 0 18px;}
+  .modal .row{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+  .big-btn{font-size:26px; font-weight:700; padding:16px 28px; border-radius:22px; color:#fff; background:var(--c,var(--green));
+           box-shadow:0 6px 0 var(--d,#23935a);}
+  .big-btn:active{transform:translateY(5px); box-shadow:0 1px 0 var(--d,#23935a);}
+
+  /* ---------- Ballons ---------- */
+  .balloon{transform-box:fill-box; transform-origin:center; animation:sway 3s ease-in-out infinite;}
+  .balloon.popped{animation:popb .35s ease-out forwards;}
+  .string.popped{transition:opacity .3s; opacity:0;}
+
+  .confetti{position:fixed; top:-20px; width:12px; height:18px; border-radius:3px; z-index:30; pointer-events:none;
+            animation:fall linear forwards;}
+
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes drift{from{transform:translateX(-15vw)}to{transform:translateX(115vw)}}
+  @keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+  @keyframes popb{0%{transform:scale(1);opacity:1}60%{transform:scale(1.45);opacity:.6}100%{transform:scale(1.7);opacity:0}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  @keyframes flip{0%{transform:scaleY(.2)}100%{transform:scaleY(1)}}
+  @keyframes pop-in{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+  @keyframes jump{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+  .happy{animation:jump .5s ease-in-out 3;}
+
+  .back-portal{position:fixed;top:max(10px,env(safe-area-inset-top));left:10px;z-index:30;font:inherit;font-weight:700;font-size:18px;
+    text-decoration:none;color:#2b3a55;background:#fff;border-radius:999px;padding:6px 14px;box-shadow:0 4px 0 rgba(0,0,0,.1)}
+  @media (max-width:600px){ #home{padding-top:58px} }
+</style>
+</head>
+<body>
+
+<!-- Accueil -->
+<section id="home" class="screen active">
+  <a class="back-portal" href="../">◀ Jeux</a>
+  <div class="home-cloud" style="top:8%; animation-duration:38s;">☁️</div>
+  <div class="home-cloud" style="top:62%; animation-duration:52s; animation-delay:-20s; font-size:60px;">☁️</div>
+  <h1 class="logo"><span>🎈</span> Le Pendu <span style="animation-delay:.6s">🎈</span></h1>
+  <p class="subtitle">Trouve le mot avant que tous les ballons éclatent !</p>
+  <div class="modes">
+    <button class="mode-btn" style="--c:var(--green)" data-mode="facile">
+      <div class="big">🐣</div><div class="name">Facile</div>
+      <div class="desc">Petits mots · 10 ballons<br>Image + 1ʳᵉ lettre donnée</div>
+      <div class="stars" id="stars-facile">⭐ 0</div>
+    </button>
+    <button class="mode-btn" style="--c:var(--blue)" data-mode="moyen">
+      <div class="big">🦊</div><div class="name">Moyen</div>
+      <div class="desc">Mots moyens · 8 ballons<br>Catégorie affichée</div>
+      <div class="stars" id="stars-moyen">⭐ 0</div>
+    </button>
+    <button class="mode-btn" style="--c:var(--purple)" data-mode="difficile">
+      <div class="big">🦁</div><div class="name">Difficile</div>
+      <div class="desc">Grands mots · 6 ballons<br>Un seul indice</div>
+      <div class="stars" id="stars-difficile">⭐ 0</div>
+    </button>
+    <button class="mode-btn" style="--c:var(--orange)" data-mode="dictee" id="btn-dictee">
+      <div class="big">📝</div><div class="name">Dictée</div>
+      <div class="desc" id="dictee-desc">Les mots de l'école<br>On écoute le mot 🔊</div>
+      <div class="stars" id="stars-dictee">⭐ 0</div>
+    </button>
+  </div>
+</section>
+
+<!-- Jeu -->
+<section id="game" class="screen">
+  <div class="topbar">
+    <button class="icon-btn" id="btn-menu" aria-label="Menu">🏠</button>
+    <div class="badge" id="mode-badge">Facile</div>
+    <div class="spacer"></div>
+    <div class="wins" id="wins">⭐ 0</div>
+    <button class="icon-btn" id="btn-sound" aria-label="Son">🔊</button>
+  </div>
+  <div class="board">
+    <div class="scene-wrap">
+      <svg id="scene" viewBox="-30 0 360 330" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="lives" id="lives">🎈 10</div>
+    </div>
+    <div class="panel">
+      <div class="hint" id="hint"></div>
+      <div class="word" id="word"></div>
+      <div class="keyboard" id="keyboard"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Fin -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="face" id="end-face">🎉</div>
+    <h2 id="end-title">Bravo !</h2>
+    <p id="end-text">Tu as trouvé le mot :</p>
+    <div class="answer" id="end-word">CHAT</div>
+    <div class="row">
+      <button class="big-btn" id="btn-again">Encore ! ▶</button>
+      <button class="big-btn" id="btn-home" style="--c:var(--blue); --d:#2e66cc">Menu 🏠</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================== MOTS ================== */
+const WORDS = {
+  facile: [
+    ["CHAT","🐱","Animaux"],["CHIEN","🐶","Animaux"],["LAPIN","🐰","Animaux"],["VACHE","🐮","Animaux"],
+    ["POULE","🐔","Animaux"],["OURS","🐻","Animaux"],["LION","🦁","Animaux"],["LOUP","🐺","Animaux"],
+    ["SINGE","🐒","Animaux"],["ZÈBRE","🦓","Animaux"],["TIGRE","🐯","Animaux"],["CANARD","🦆","Animaux"],
+    ["SOURIS","🐭","Animaux"],["CHEVAL","🐴","Animaux"],
+    ["POMME","🍎","Fruits"],["POIRE","🍐","Fruits"],["FRAISE","🍓","Fruits"],["BANANE","🍌","Fruits"],
+    ["CITRON","🍋","Fruits"],["KIWI","🥝","Fruits"],
+    ["PAIN","🍞","À manger"],["LAIT","🥛","À manger"],["PIZZA","🍕","À manger"],["GÂTEAU","🎂","À manger"],
+    ["SOLEIL","☀️","Nature"],["LUNE","🌙","Nature"],["FLEUR","🌸","Nature"],["ARBRE","🌳","Nature"],
+    ["NEIGE","❄️","Nature"],["ÉTOILE","⭐","Nature"],["NUAGE","☁️","Nature"],["PLUIE","🌧️","Nature"],
+    ["BATEAU","⛵","Transports"],["AVION","✈️","Transports"],["VÉLO","🚲","Transports"],["TRAIN","🚂","Transports"],
+    ["BUS","🚌","Transports"],
+    ["MAISON","🏠","Objets"],["LIVRE","📖","Objets"],["CLÉ","🔑","Objets"],["ROBOT","🤖","Jouets"],
+    ["BALLON","⚽","Jouets"],["COEUR","❤️","Formes"]
+  ],
+  moyen: [
+    ["GIRAFE","🦒","Animaux"],["DAUPHIN","🐬","Animaux"],["TORTUE","🐢","Animaux"],["PINGOUIN","🐧","Animaux"],
+    ["ÉCUREUIL","🐿️","Animaux"],["PAPILLON","🦋","Animaux"],["HÉRISSON","🦔","Animaux"],["MOUTON","🐑","Animaux"],
+    ["COCHON","🐷","Animaux"],["HIBOU","🦉","Animaux"],["ABEILLE","🐝","Animaux"],["ESCARGOT","🐌","Animaux"],
+    ["CERISE","🍒","Fruits et légumes"],["ORANGE","🍊","Fruits et légumes"],["CAROTTE","🥕","Fruits et légumes"],
+    ["TOMATE","🍅","Fruits et légumes"],["ANANAS","🍍","Fruits et légumes"],["BROCOLI","🥦","Fruits et légumes"],
+    ["CRAYON","✏️","École"],["CARTABLE","🎒","École"],["CISEAUX","✂️","École"],
+    ["MONTAGNE","⛰️","Nature"],["VOLCAN","🌋","Nature"],["FORÊT","🌲","Nature"],
+    ["VOITURE","🚗","Transports"],["CAMION","🚚","Transports"],["FUSÉE","🚀","Transports"],["TRACTEUR","🚜","Transports"],
+    ["CADEAU","🎁","Fête"],["GUITARE","🎸","Musique"],["TAMBOUR","🥁","Musique"],
+    ["CHÂTEAU","🏰","Contes"],["DRAGON","🐉","Contes"],["LICORNE","🦄","Contes"],["FANTÔME","👻","Contes"]
+  ],
+  difficile: [
+    ["CROCODILE","🐊","Animaux"],["KANGOUROU","🦘","Animaux"],["HIPPOPOTAME","🦛","Animaux"],
+    ["RHINOCÉROS","🦏","Animaux"],["CHAUVE-SOURIS","🦇","Animaux"],["GRENOUILLE","🐸","Animaux"],
+    ["COCCINELLE","🐞","Animaux"],["DINOSAURE","🦕","Animaux"],["PERROQUET","🦜","Animaux"],
+    ["CHAMPIGNON","🍄","À manger"],["CORNICHON","🥒","À manger"],["CHOCOLAT","🍫","À manger"],
+    ["SANDWICH","🥪","À manger"],["CROISSANT","🥐","À manger"],
+    ["ARC-EN-CIEL","🌈","Nature"],["TOURNESOL","🌻","Nature"],
+    ["HÉLICOPTÈRE","🚁","Transports"],["TROTTINETTE","🛴","Transports"],
+    ["ASTRONAUTE","🧑‍🚀","Métiers"],["POMPIER","🧑‍🚒","Métiers"],
+    ["ORDINATEUR","💻","Objets"],["PARAPLUIE","☂️","Objets"],["TÉLESCOPE","🔭","Objets"],
+    ["BIBLIOTHÈQUE","📚","Lieux"],["ANNIVERSAIRE","🎂","Fête"]
+  ]
+};
+
+const MODES = {
+  facile:   {label:"Facile",    lives:10, color:"var(--green)",  showEmoji:true,  showCat:true,  first:true},
+  moyen:    {label:"Moyen",     lives:8,  color:"var(--blue)",   showEmoji:false, showCat:true,  first:false},
+  difficile:{label:"Difficile", lives:6,  color:"var(--purple)", showEmoji:false, showCat:false, first:false},
+  dictee:   {label:"Dictée",    lives:8,  color:"var(--orange)", showEmoji:false, showCat:false, first:false, speak:true}
+};
+const BALLOON_COLORS = ["#ff6b6b","#ffd23f","#4d8dff","#3cc47c","#ff9f43","#9b6bff","#ff7ac6","#2ec4d6","#ff6b6b","#ffd23f"];
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+/* ================== ÉTAT ================== */
+const S = { mode:"facile", word:null, guessed:new Set(), lives:0, max:0, over:false, hintLevel:0, sound:true, bags:{} };
+let stars = {facile:0, moyen:0, difficile:0, dictee:0};
+try{ const s = JSON.parse(localStorage.getItem("pendu-stars")); if(s) stars = Object.assign(stars, s); }catch(e){}
+function saveStars(){ try{ localStorage.setItem("pendu-stars", JSON.stringify(stars)); }catch(e){} }
+
+const $ = id => document.getElementById(id);
+const base = c => c.normalize("NFD").replace(/[̀-ͯ]/g, "");
+const isLetter = c => /[A-Z]/.test(base(c));
+
+/* ================== SONS ================== */
+let actx = null;
+function ac(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+function tone(freq, dur, type="sine", when=0, vol=.18){
+  const c = ac(); if(!c || !S.sound) return;
+  const t = c.currentTime + when, o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur);
+}
+function popSound(){
+  const c = ac(); if(!c || !S.sound) return;
+  const len = c.sampleRate * .12, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 3);
+  const src = c.createBufferSource(), g = c.createGain(); g.gain.value = .5;
+  src.buffer = buf; src.connect(g).connect(c.destination); src.start();
+}
+const sfx = {
+  good: () => { tone(660,.12,"triangle"); tone(880,.16,"triangle",.08); },
+  bad:  () => { popSound(); tone(180,.2,"sine",0,.12); },
+  win:  () => [523,659,784,1047].forEach((f,i)=>tone(f,.25,"triangle",i*.12)),
+  lose: () => [392,330,262].forEach((f,i)=>tone(f,.3,"sine",i*.18))
+};
+
+/* ================== SCÈNE ================== */
+function balloonPositions(n){
+  const pts = [], hand = {x:150, y:232};
+  for(let i=0;i<n;i++){
+    const a = n===1 ? 0 : (-56 + 112*i/(n-1)) * Math.PI/180;
+    const r = n > 6 ? (i%2 ? 132 : 178) : 160;
+    pts.push({x: hand.x + Math.sin(a)*r*1.05, y: hand.y - Math.cos(a)*r});
+  }
+  return pts;
+}
+function mouthPath(mood){
+  if(mood==="happy")   return "M136 268 Q150 286 164 268 Z";
+  if(mood==="sad")     return "M138 281 Q150 268 162 281";
+  if(mood==="worried") return "M140 276 Q150 271 160 276";
+  return "M139 272 Q150 282 161 272";
+}
+function drawScene(){
+  const pts = balloonPositions(S.max);
+  let strings = "", balloons = "";
+  pts.forEach((p,i)=>{
+    const col = BALLOON_COLORS[i % BALLOON_COLORS.length];
+    strings += `<path class="string" id="s${i}" d="M150 232 Q${(150+p.x)/2 + (i%2?8:-8)} ${(232+p.y)/2+20} ${p.x} ${p.y+26}" stroke="#7a869c" stroke-width="2" fill="none"/>`;
+    balloons += `<g class="balloon" id="b${i}" style="animation-delay:${-i*.37}s">
+        <ellipse cx="${p.x}" cy="${p.y}" rx="21" ry="25" fill="${col}"/>
+        <path d="M${p.x-5} ${p.y+28} L${p.x+5} ${p.y+28} L${p.x} ${p.y+22} Z" fill="${col}"/>
+        <ellipse cx="${p.x-7}" cy="${p.y-9}" rx="5" ry="8" fill="#fff" opacity=".45"/>
+      </g>`;
+  });
+  $("scene").innerHTML = `
+    <ellipse cx="150" cy="322" rx="90" ry="8" fill="#000" opacity=".08"/>
+    ${strings}
+    <g id="buddy">
+      <rect x="118" y="290" width="64" height="34" rx="16" fill="#ffb562"/>
+      <path d="M170 296 Q160 262 152 236" stroke="#ffb562" stroke-width="12" stroke-linecap="round" fill="none"/>
+      <circle cx="150" cy="232" r="8" fill="#ffb562"/>
+      <circle cx="122" cy="246" r="12" fill="#ffb562"/><circle cx="122" cy="246" r="6" fill="#ff8fa3"/>
+      <circle cx="178" cy="246" r="12" fill="#ffb562"/><circle cx="178" cy="246" r="6" fill="#ff8fa3"/>
+      <circle cx="150" cy="268" r="32" fill="#ffc47e"/>
+      <circle cx="139" cy="261" r="4.5" fill="#2b3a55"/><circle cx="161" cy="261" r="4.5" fill="#2b3a55"/>
+      <circle cx="131" cy="273" r="5" fill="#ff8fa3" opacity=".6"/><circle cx="169" cy="273" r="5" fill="#ff8fa3" opacity=".6"/>
+      <path id="mouth" d="${mouthPath('normal')}" stroke="#2b3a55" stroke-width="3" stroke-linecap="round" fill="#ff6b6b"/>
+    </g>
+    ${balloons}`;
+  S.alive = pts.map((_,i)=>i);
+}
+function setMood(m){
+  const mouth = $("mouth"); if(!mouth) return;
+  mouth.setAttribute("d", mouthPath(m));
+  mouth.setAttribute("fill", m==="happy" ? "#ff6b6b" : (m==="sad"||m==="worried") ? "none" : "#ff6b6b");
+}
+function popBalloon(){
+  if(!S.alive.length) return;
+  const k = Math.floor(Math.random()*S.alive.length), i = S.alive.splice(k,1)[0];
+  $("b"+i).classList.add("popped"); $("s"+i).classList.add("popped");
+}
+
+/* ================== JEU ================== */
+function pickWord(mode){
+  if(!S.bags[mode] || !S.bags[mode].length){
+    S.bags[mode] = WORDS[mode].slice().sort(()=>Math.random()-.5);
+    if(S.word && S.bags[mode][S.bags[mode].length-1] === S.word) S.bags[mode].unshift(S.bags[mode].pop());
+  }
+  return S.bags[mode].pop();
+}
+function startGame(mode){
+  S.mode = mode; const M = MODES[mode];
+  S.word = pickWord(mode); S.guessed = new Set(); S.max = S.lives = M.lives; S.over = false; S.hintLevel = 0;
+  $("mode-badge").textContent = M.label; $("mode-badge").style.setProperty("--c", M.color);
+  $("overlay").classList.remove("show");
+  drawScene(); buildKeyboard();
+  if(M.first) guess(base(S.word[0][0]), true);
+  render();
+  showScreen("game");
+}
+function buildKeyboard(){
+  const kb = $("keyboard"); kb.innerHTML = "";
+  ALPHABET.forEach(L=>{
+    const b = document.createElement("button");
+    b.className = "key"; b.textContent = L; b.dataset.l = L;
+    b.addEventListener("click", ()=>guess(L));
+    kb.appendChild(b);
+  });
+}
+function guess(L, silent=false){
+  if(S.over || S.guessed.has(L)) return;
+  S.guessed.add(L);
+  const key = document.querySelector(`.key[data-l="${L}"]`);
+  const hit = [...S.word[0]].some(c => base(c) === L);
+  if(key){ key.disabled = true; key.classList.add(hit ? "good" : "bad"); }
+  if(hit){ if(!silent) sfx.good(); }
+  else { S.lives--; popBalloon(); sfx.bad(); }
+  render();
+  checkEnd();
+}
+function render(){
+  const w = S.word[0], M = MODES[S.mode];
+  // mot
+  const box = $("word"); box.innerHTML = "";
+  const panelW = Math.min(box.parentElement.clientWidth || window.innerWidth, window.innerWidth - 16, 760);
+  const gap = w.length > 9 ? 5 : 8;
+  const size = Math.max(20, Math.min(64, Math.floor((panelW - gap*(w.length-1) - 8) / w.length)));
+  box.style.setProperty("--s", size + "px"); box.style.setProperty("--gap", gap + "px");
+  [...w].forEach(c=>{
+    const d = document.createElement("div");
+    if(!isLetter(c)){ d.className = "slot sep"; d.textContent = c; }
+    else if(S.guessed.has(base(c))){ d.className = "slot shown"; d.textContent = c; }
+    else if(S.over){ d.className = "slot missed"; d.textContent = c; }
+    else d.className = "slot";
+    box.appendChild(d);
+  });
+  // indices
+  const showEmoji = M.showEmoji || (S.mode==="moyen" && S.hintLevel>0);
+  const showCat = M.showCat || (S.mode==="difficile" && S.hintLevel>0);
+  let h = "";
+  if(showEmoji) h += `<span class="hint-emoji">${S.word[1]}</span>`;
+  if(showCat) h += `<span class="hint-cat">${S.word[2]}</span>`;
+  if(M.speak){
+    h = `<button class="hint-btn" id="btn-say">🔊 Écouter le mot</button><span class="hint-cat">${S.word[2]}</span>`;
+  } else if(!S.over && S.hintLevel===0 && !M.showEmoji) h += `<button class="hint-btn" id="btn-hint">💡 Indice</button>`;
+  $("hint").innerHTML = h;
+  const sb = $("btn-say"); if(sb) sb.onclick = ()=> say(S.word[0]);
+  const hb = $("btn-hint"); if(hb) hb.onclick = ()=>{ S.hintLevel = 1; tone(990,.15,"triangle"); render(); };
+  // vies + humeur
+  $("lives").textContent = "🎈 " + S.lives;
+  $("wins").textContent = "⭐ " + stars[S.mode];
+  if(!S.over) setMood(S.lives <= 2 ? "worried" : "normal");
+}
+function checkEnd(){
+  const won = [...S.word[0]].every(c => !isLetter(c) || S.guessed.has(base(c)));
+  if(!won && S.lives > 0) return;
+  S.over = true;
+  if(won){
+    stars[S.mode]++; saveStars();
+    setMood("happy"); $("buddy").classList.add("happy");
+    render(); sfx.win(); confetti();
+    setTimeout(()=>endModal(true), 1100);
+  } else {
+    setMood("sad"); render(); sfx.lose();
+    setTimeout(()=>endModal(false), 1300);
+  }
+}
+const WIN_MSG = ["Bravo !","Super !","Génial !","Champion !","Trop fort !","Excellent !"];
+function endModal(won){
+  $("end-face").textContent = won ? S.word[1] : "😮";
+  $("end-title").textContent = won ? WIN_MSG[Math.floor(Math.random()*WIN_MSG.length)] : "Oh non !";
+  $("end-text").textContent = won ? "Tu as trouvé le mot :" : "Le mot était :";
+  $("end-word").textContent = S.word[0];
+  $("btn-again").textContent = won ? "Encore ! ▶" : "On réessaie ! ▶";
+  $("overlay").classList.add("show");
+}
+function confetti(){
+  const cols = ["#ff6b6b","#ffd23f","#4d8dff","#3cc47c","#ff9f43","#9b6bff","#ff7ac6"];
+  for(let i=0;i<70;i++){
+    const c = document.createElement("div"); c.className = "confetti";
+    c.style.left = Math.random()*100 + "vw"; c.style.background = cols[i % cols.length];
+    c.style.animationDuration = (1.6 + Math.random()*1.8) + "s"; c.style.animationDelay = Math.random()*.5 + "s";
+    document.body.appendChild(c); setTimeout(()=>c.remove(), 4200);
+  }
+}
+
+/* ================== NAVIGATION ================== */
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active", s.id===id));
+  if(id==="home") ["facile","moyen","difficile","dictee"].forEach(m => $("stars-"+m).textContent = "⭐ " + stars[m]);
+}
+document.querySelectorAll(".mode-btn").forEach(b => b.addEventListener("click", ()=>{
+  ac();
+  if(b.dataset.mode==="dictee" && !(WORDS.dictee && WORDS.dictee.length)) return;
+  startGame(b.dataset.mode);
+}));
+$("btn-menu").onclick = ()=>{ $("overlay").classList.remove("show"); showScreen("home"); };
+$("btn-home").onclick = ()=>{ $("overlay").classList.remove("show"); showScreen("home"); };
+$("btn-again").onclick = ()=> startGame(S.mode);
+$("btn-sound").onclick = ()=>{ S.sound = !S.sound; $("btn-sound").textContent = S.sound ? "🔊" : "🔇"; };
+document.addEventListener("keydown", e=>{
+  if(!$("game").classList.contains("active")) return;
+  const L = base(e.key || "").toUpperCase();
+  if(/^[A-Z]$/.test(L)) guess(L);
+  if(e.key==="Enter" && $("overlay").classList.contains("show")) startGame(S.mode);
+});
+window.addEventListener("resize", ()=>{ if(S.word && $("game").classList.contains("active")) render(); });
+showScreen("home");
+
+/* ================== DICTÉE ================== */
+// Les mots de la semaine sont dans dictee.json (mis à jour sur GitHub), avec une copie locale pour le hors-ligne.
+function say(text){
+  try{
+    if(!S.sound || !window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.toLowerCase());
+    u.lang = "fr-FR"; u.rate = .8;
+    const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("fr"));
+    if(v) u.voice = v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function applyDictee(data){
+  if(!data || !Array.isArray(data.mots) || !data.mots.length) return false;
+  const titre = data.titre || "Mots de la semaine";
+  WORDS.dictee = data.mots.map(m => [String(m).trim().toUpperCase(), "📝", titre]).filter(w => w[0]);
+  S.bags.dictee = [];
+  $("dictee-desc").innerHTML = `${titre}<br>${WORDS.dictee.length} mots · on écoute 🔊`;
+  $("btn-dictee").style.opacity = 1;
+  return true;
+}
+(function loadDictee(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem("pendu-dictee")); }catch(e){}
+  if(!applyDictee(saved)){ $("dictee-desc").innerHTML = "Pas encore de mots<br>(connecte-toi une fois)"; $("btn-dictee").style.opacity = .5; }
+  fetch("dictee.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).then(d => {
+    if(applyDictee(d)){ try{ localStorage.setItem("pendu-dictee", JSON.stringify(d)); }catch(e){} }
+  }).catch(()=>{});
+})();
+// startGame lit le mot à voix haute en mode dictée
+const _startGame = startGame;
+startGame = function(mode){ _startGame(mode); if(MODES[mode].speak) setTimeout(()=>say(S.word[0]), 300); };
+
+if("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
+  window.addEventListener("load", ()=> navigator.serviceWorker.register("../sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
