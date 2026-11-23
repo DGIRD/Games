@@ -1,5 +1,5 @@
 // Cache hors-ligne du portail Mes Jeux (Pendu des Ballons + Course du Calcul)
-const CACHE = "jeux-v2";
+const CACHE = "jeux-v3";
 const FILES = [
   "./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",
   "./pendu/", "./pendu/index.html", "./pendu/dictee.json",
